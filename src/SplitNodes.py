@@ -1,4 +1,5 @@
 from textnode import TextNode, TextType
+from extract_makedown_links import extract_markdown_links, extract_markdown_images
 
 DelimiterMap = {
     "`": TextType.CODE,
@@ -15,51 +16,90 @@ def split_nodes_delimiter(old_nodes: list[TextNode], delimiter: str, text_type: 
             new_nodes.append(node)
             continue
 
-        split_text= node.text.split(delimiter)
+        split_nodes = []
+        sections = node.text.split(delimiter)
+        if len(sections) % 2 == 0:
+            raise ValueError("invalid markdown, formatted section not closed")
 
-        if len(split_text) % 2 == 0:
-            raise ValueError("No closing delimiter is found, invalid Markdown syntax")
-
-        count = 0
-        for text in split_text:
-            if text == "":
-                count += 1
+        for i in range(len(sections)):
+            if sections[i] == "":
                 continue
-
-            if count%2 == 1:
-                new_nodes.append(TextNode(text, DelimiterMap[delimiter]))
+            if i % 2 == 0:
+                split_nodes.append(TextNode(sections[i], TextType.TEXT))
             else:
-                new_nodes.append(TextNode(text, TextType.TEXT ))
+                split_nodes.append(TextNode(sections[i], text_type))
 
-            count += 1
+        new_nodes.extend(split_nodes)
+
+    return new_nodes
+
+def split_nodes_link(old_nodes: list[TextNode]) -> list[TextNode]:
+
+    new_nodes: list[TextNode] = []
+
+    for node in old_nodes:
+        if node.text_type != TextType.TEXT:
+            new_nodes.append(node)
+            continue
+
+        reduced_text = node.text
+        split_nodes = extract_markdown_links(node.text)
+
+        for text, link in split_nodes:
+            split_text = reduced_text.split(f"[{text}]({link})")
+            if len(split_text[0]) > 0:
+                new_nodes.append(
+                    TextNode(split_text[0], TextType.TEXT)
+                )
+            reduced_text = "".join(split_text[1:])
+            new_nodes.append(TextNode(text, TextType.LINK, link))
+
+        if len(reduced_text) > 0:
+            new_nodes.append(TextNode(reduced_text, TextType.TEXT))
+
 
     return new_nodes
 
 
-# the code below is half complete, but more usefule for nested inline version of the problem
-# it requires a stack to verify  the nested inlines are completed,
-# needs the DelimiterMap to be included, which is missing
-#
 
-    #    i, j = 0,0
-    #    while  i < len(node.text) and j < len(node.text):
+def split_nodes_image(old_nodes: list[TextNode]) -> list[TextNode]:
+    new_nodes: list[TextNode] = []
 
-    #        # we need to make sure that we can take account of double like **
-    #        if node.text[j] == delimiter:
-    #            new_nodes.append(TextNode(node.text[i:j], TextType.TEXT))
-    #            j += 1
-    #            i = j
-    #            while node.text[j] != delimiter:
-    #                j += 1
-    #                if j >= len(node.text):
-    #                    raise Exception("No closing delimiter is found, invalid Markdown syntax")
+    for node in old_nodes:
+        if node.text_type != TextType.TEXT:
+            new_nodes.append(node)
+            continue
 
-    #            new_nodes.append(TextNode(node.text[i:j], TextType.CODE))
+        reduced_text = node.text
 
-    #            i = j+1
-    #            new_nodes.append(TextNode(node.text[i:], TextType.CODE))
+        split_nodes = extract_markdown_images(node.text)
 
-    #            i, j = len(node.text), len(node.text)
+        for text, link in split_nodes:
+            split_text = reduced_text.split(f"![{text}]({link})")
+            if len(split_text[0]) > 0:
+                new_nodes.append(
+                    TextNode(split_text[0], TextType.TEXT)
+                )
 
-    #        j += 1
+            reduced_text = "".join(split_text[1:])
+            new_nodes.append(TextNode(text, TextType.IMAGE, link))
+
+
+        if len(reduced_text) > 0:
+            new_nodes.append(TextNode(reduced_text, TextType.TEXT))
+
+    return new_nodes
+
+def text_to_textnodes(text:str) -> list[TextNode]:
+
+    text_node = TextNode(text, TextType.TEXT)
+    nodes:list[TextNode] = [text_node]
+
+    nodes = split_nodes_delimiter(nodes, "**", TextType.BOLD)
+    nodes = split_nodes_delimiter(nodes, "_", TextType.ITALIC)
+    nodes = split_nodes_delimiter(nodes, "`", TextType.CODE)
+    nodes = split_nodes_image(nodes)
+    nodes = split_nodes_link(nodes)
+
+    return nodes
 
