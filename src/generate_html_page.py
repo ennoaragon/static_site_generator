@@ -4,7 +4,7 @@ from extract_title import extra_title_markdown
 from markdown_to_blocks import markdown_to_blocks, markdown_to_html_node
 
 
-def generate_pages_recursive(dir_path_content: str, template_path, dest_dir_path) -> None:
+def generate_pages_recursive(dir_path_content: str, template_path, dest_dir_path, baseurl: str) -> None:
 
     dir_items = os.listdir(dir_path_content)
 
@@ -14,15 +14,15 @@ def generate_pages_recursive(dir_path_content: str, template_path, dest_dir_path
         new_dest = os.path.join(dest_dir_path,item)
         if os.path.isfile(target_path):
             print(f" * {target_path} -> {new_dest}")
-            generate_page(target_path, template_path, os.path.join(dest_dir_path, "index.html"))
+            generate_page(target_path, template_path, os.path.join(dest_dir_path, "index.html"), baseurl)
         else:
-            generate_pages_recursive(target_path, template_path,  new_dest)
+            generate_pages_recursive(target_path, template_path,  new_dest, baseurl)
 
     pass
 
 
 
-def generate_page(from_path: str, template_path: str, dest_path: str) -> None:
+def generate_page(from_path: str, template_path: str, dest_path: str, baseurl: str) -> None:
 
     print(f"from_path: {from_path}, template_path: {template_path}, dest_path: {dest_path}")
     print(f"Generating page from {from_path} to {dest_path} using {template_path}")
@@ -43,6 +43,10 @@ def generate_page(from_path: str, template_path: str, dest_path: str) -> None:
     template = template.replace("{{ Title }}", title )
 
     file_completed = template.replace("{{ Content }}", contents )
+
+    if baseurl != "/":
+        file_completed = file_completed.replace('href="/', f'href="{baseurl}')
+        file_completed = file_completed.replace('src="/', f'src="{baseurl}')
 
     dest_dir_path = os.path.dirname(dest_path)
     if dest_dir_path != "":

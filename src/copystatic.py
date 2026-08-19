@@ -1,12 +1,9 @@
 from os import path, listdir, mkdir
 from  shutil import rmtree, copy
 
-static_path = "./static"
-public_path = "./public"
+def copy_static_to_public(static_path: str, public_path: str) -> None:
 
-def copy_static_to_public() -> None:
-
-    public_path = path.abspath("public")
+    public_path = path.abspath(public_path)
 
     if path.exists(public_path):
         rmtree(public_path)
@@ -29,4 +26,6 @@ def helper_copy_all_content_dirs(cur_path: str, dest: str) -> None:
             copy(target_path, dest)
         else:
             helper_copy_all_content_dirs(target_path, new_dest)
+
+
 
