@@ -56,14 +56,16 @@ def block_to_block_type(block: str) -> BlockType:
 
     return BlockType.PARAGRAPH
 
+
 def markdown_to_html_node(text: str) -> ParentNode:
 
     markdown_blocks = markdown_to_blocks(text)
 
-    leaf_nodes: list[HTMLNode] = []
+    leaf_nodes = []
 
     for block in markdown_blocks:
-        leaf_nodes.append(block_to_html_node(block))
+        html_node = block_to_html_node(block)
+        leaf_nodes.append(html_node)
 
     return ParentNode("div", leaf_nodes)
 
@@ -97,11 +99,12 @@ def block_to_html_node(text: str) -> ParentNode:
 
 def paragraph_helper_node(text: str) -> ParentNode:
     broken_text = text.split("\n")
-    line =  " ".join(broken_text)
+    line = " ".join(broken_text)
 
     children = text_to_child(line)
 
     return ParentNode("p", children)
+
 
 def code_block_helper(text) -> ParentNode:
 
@@ -110,7 +113,7 @@ def code_block_helper(text) -> ParentNode:
 
     new_text = text[4:-3]
 
-    raw_text_node= TextNode(new_text, TextType.TEXT)
+    raw_text_node = TextNode(new_text, TextType.TEXT)
     child = text_node_to_html_node(raw_text_node)
     code = ParentNode("code", [child])
 
@@ -119,7 +122,7 @@ def code_block_helper(text) -> ParentNode:
 
 def ordered_list_helper(text) -> ParentNode:
 
-    html_nodes:list[HTMLNode] = []
+    html_nodes: list[HTMLNode] = []
 
     items = text.split("\n")
 
@@ -131,19 +134,21 @@ def ordered_list_helper(text) -> ParentNode:
 
     return ParentNode("ol", html_nodes)
 
+
 def unordered_list_helper(text) -> ParentNode:
 
-    html_nodes:list[HTMLNode] = []
+    html_nodes: list[HTMLNode] = []
 
     items = text.split("\n")
 
     for item in items:
 
-        line =item[2:]
+        line = item[2:]
         children = text_to_child(line)
         html_nodes.append(ParentNode("li", children))
 
     return ParentNode("ul", html_nodes)
+
 
 def heading_helper_html_node(text) -> ParentNode:
 
@@ -157,10 +162,11 @@ def heading_helper_html_node(text) -> ParentNode:
     if count + 1 >= len(text):
         raise ValueError(f"invalid heading level: {count}")
 
-    content = text[count + 1: ]
+    content = text[count + 1 :]
     children = text_to_child(content)
 
     return ParentNode(f"h{count}", children)
+
 
 def quote_helper_html_node(text) -> ParentNode:
 
@@ -178,6 +184,7 @@ def quote_helper_html_node(text) -> ParentNode:
     children = text_to_child(content)
 
     return ParentNode("blockquote", children)
+
 
 def text_to_child(text) -> list[HTMLNode]:
 
